@@ -13,31 +13,51 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<number | null>(null);
 
+  // მონაცემების წამოღება და სტატუსის აღდგენა ერთდროულად
   async function fetchDeals() {
     const { data } = await supabase.from('deals').select('*').eq('is_active', true);
-    if (data) setDeals(data);
+    if (data) {
+      setDeals(data);
+      // ავტომატურად ვამოწმებთ შენახულ მონაცემებს ყოველი განახლებისას
+      const saved = localStorage.getItem('submitted_deals');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setSubmitted(new Set(parsed));
+        } catch (e) {}
+      }
+    }
   }
 
   useEffect(() => {
     fetchDeals();
     const interval = setInterval(fetchDeals, 3000);
-    const saved = localStorage.getItem('submitted_deals');
-    if (saved) {
-      try { setSubmitted(new Set(JSON.parse(saved))); } catch (e) {}
-    }
     return () => clearInterval(interval);
   }, []);
 
   async function handleSubmit(deal: any) {
     const data = formData[deal.id];
     if (!data?.name || !data?.phone || !data?.address) return alert('გთხოვთ შეავსოთ ყველა ველი!');
+    
     setLoading(deal.id);
-    await supabase.from('leads').insert([{ name: data.name, phone: data.phone, address: data.address, deal_id: deal.id }]);
-    await supabase.rpc('increment_deal', { row_id: deal.id });
-    const newSubmitted = new Set(submitted).add(deal.id);
-    setSubmitted(newSubmitted);
-    localStorage.setItem('submitted_deals', JSON.stringify(Array.from(newSubmitted)));
-    await fetchDeals();
+    
+    // 1. ჩაწერა ბაზაში
+    const { error: insertError } = await supabase.from('leads').insert([{ 
+      name: data.name, phone: data.phone, address: data.address, deal_id: deal.id 
+    }]);
+
+    if (!insertError) {
+      // 2. ციფრის გაზრდა
+      await supabase.rpc('increment_deal', { row_id: deal.id });
+      
+      // 3. სტატუსის მყისიერი განახლება
+      const newSubmitted = new Set(submitted).add(deal.id);
+      setSubmitted(newSubmitted);
+      localStorage.setItem('submitted_deals', JSON.stringify(Array.from(newSubmitted)));
+    } else {
+      alert('შეცდომა: ' + insertError.message);
+    }
+    
     setLoading(null);
   }
 
