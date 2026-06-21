@@ -13,9 +13,32 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<number | null>(null);
 
+  // ფუნქცია, რომელიც ამოწმებს ბაზაში, ნამდვილად არსებობს თუ არა მონაწილე
+  async function checkUserStatus(dealsList: any[]) {
+    const saved = localStorage.getItem('submitted_deals');
+    if (!saved) return;
+
+    const savedIds = JSON.parse(saved);
+    // ვამოწმებთ, რომელი deal_id-ებია დარჩენილი ბაზაში
+    const { data: leads } = await supabase
+      .from('leads')
+      .select('deal_id');
+
+    const activeDealIds = new Set(leads?.map(l => l.deal_id) || []);
+    
+    // ვტოვებთ მხოლოდ იმ ID-ებს, რომლებიც მართლაც არის ბაზაში
+    const validIds = savedIds.filter((id: number) => activeDealIds.has(id));
+    
+    setSubmitted(new Set(validIds));
+    localStorage.setItem('submitted_deals', JSON.stringify(validIds));
+  }
+
   async function fetchDeals() {
     const { data } = await supabase.from('deals').select('*').eq('is_active', true);
-    if (data) setDeals(data);
+    if (data) {
+      setDeals(data);
+      checkUserStatus(data); // მონაცემების წამოღებისას ვამოწმებთ სტატუსსაც
+    }
   }
 
   useEffect(() => {
@@ -66,21 +89,15 @@ export default function LandingPage() {
                 
                 <h2 style={{ fontSize: '18px', margin: '15px 0 5px 0' }}>{deal.title}</h2>
                 
-                {/* აღწერის ჩვენება (შემოწმება NULL-ზე) */}
                 {deal.description ? (
                   <p style={{ fontSize: '14px', color: '#555', margin: '10px 0' }}>{deal.description}</p>
                 ) : (
                   <p style={{ fontSize: '14px', color: '#999', margin: '10px 0', fontStyle: 'italic' }}>დეტალური ინფორმაცია მალე დაემატება.</p>
                 )}
                 
-                {/* ფასების ჩვენება */}
                 <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10B981' }}>
-                    {deal.discounted_price} ₾
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#9CA3AF', textDecoration: 'line-through' }}>
-                    {deal.original_price} ₾
-                  </span>
+                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10B981' }}>{deal.discounted_price} ₾</span>
+                  <span style={{ fontSize: '14px', color: '#9CA3AF', textDecoration: 'line-through' }}>{deal.original_price} ₾</span>
                 </div>
 
                 <div style={{ marginBottom: '15px' }}>
