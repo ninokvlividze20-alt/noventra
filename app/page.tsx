@@ -72,7 +72,14 @@ export default function LandingPage() {
             return (
               <div key={deal.id} style={{ backgroundColor: 'white', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                 <img src={deal.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '15px' }} />
-                <h2 style={{ fontSize: '18px', margin: '15px 0' }}>{deal.title}</h2>
+                
+                <h2 style={{ fontSize: '18px', margin: '15px 0 5px 0' }}>{deal.title}</h2>
+                
+                {/* ფასის ჩვენება */}
+                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#EF4444', marginBottom: '15px' }}>
+                  ფასი: {deal.price ? `${deal.price} ₾` : 'ფასი შეთანხმებით'}
+                </p>
+
                 <div style={{ marginBottom: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold' }}>
                     <span>{deal.current_count} მონაწილე</span>
@@ -82,6 +89,7 @@ export default function LandingPage() {
                     <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
                   </div>
                 </div>
+                
                 {!isDone ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <input placeholder="სახელი" onChange={(e) => setFormData({...formData, [deal.id]: {...formData[deal.id], name: e.target.value}})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
@@ -93,9 +101,9 @@ export default function LandingPage() {
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '15px', backgroundColor: '#f0fff4', borderRadius: '10px' }}>
-                    <p style={{ color: '#10B981', fontWeight: 'bold' }}>მადლობა! დაგიკავშირდებით!</p>
+                    <p style={{ color: '#10B981', fontWeight: 'bold' }}>გილოცავთ, თქვენ უკვე ჩაერთეთ აქციაში!</p>
                     <a href={deal.facebook_link || "#"} target="_blank" style={{ display: 'block', backgroundColor: '#0084FF', color: 'white', padding: '10px', borderRadius: '8px', textDecoration: 'none', marginTop: '10px' }}>
-                      მომწერეთ მესენჯერში
+                      აუცილებლად შემოგვიერთდით მესენჯერში
                     </a>
                   </div>
                 )}
