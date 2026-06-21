@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -9,49 +9,47 @@ const supabase = createClient(
 
 export default function LandingPage() {
   const [deals, setDeals] = useState<any[]>([]);
-  const [formData, setFormData] = useState<{ [key: number]: any }>({});
+  const [formData, setFormData] = useState<{ [key: number]: { name: string, phone: string, address: string } }>({});
   const [submitted, setSubmitted] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<number | null>(null);
 
-  // ფუნქცია, რომელიც ამოწმებს ბაზაში, ნამდვილად არსებობს თუ არა მონაწილე
-  async function checkUserStatus(dealsList: any[]) {
+  const checkUserStatus = useCallback(async () => {
     const saved = localStorage.getItem('submitted_deals');
     if (!saved) return;
 
     const savedIds = JSON.parse(saved);
-    // ვამოწმებთ, რომელი deal_id-ებია დარჩენილი ბაზაში
-    const { data: leads } = await supabase
-      .from('leads')
-      .select('deal_id');
-
+    const { data: leads } = await supabase.from('leads').select('deal_id');
     const activeDealIds = new Set(leads?.map(l => l.deal_id) || []);
     
-    // ვტოვებთ მხოლოდ იმ ID-ებს, რომლებიც მართლაც არის ბაზაში
     const validIds = savedIds.filter((id: number) => activeDealIds.has(id));
-    
     setSubmitted(new Set(validIds));
     localStorage.setItem('submitted_deals', JSON.stringify(validIds));
-  }
+  }, []);
 
-  async function fetchDeals() {
+  const fetchDeals = useCallback(async () => {
     const { data } = await supabase.from('deals').select('*').eq('is_active', true);
     if (data) {
       setDeals(data);
-      checkUserStatus(data); // მონაცემების წამოღებისას ვამოწმებთ სტატუსსაც
+      checkUserStatus();
     }
-  }
+  }, [checkUserStatus]);
 
   useEffect(() => {
     const saved = localStorage.getItem('submitted_deals');
     if (saved) {
-      try {
-        setSubmitted(new Set(JSON.parse(saved)));
-      } catch (e) {}
+      try { setSubmitted(new Set(JSON.parse(saved))); } catch (e) {}
     }
     fetchDeals();
-    const interval = setInterval(fetchDeals, 3000);
+    const interval = setInterval(fetchDeals, 5000); // 5 წამი უფრო ოპტიმალურია
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchDeals]);
+
+  const handleInputChange = (dealId: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [dealId]: { ...prev[dealId], [field]: value }
+    }));
+  };
 
   async function handleSubmit(deal: any) {
     const data = formData[deal.id];
@@ -76,54 +74,50 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#EBE7E1', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ backgroundColor: '#F3F4F6', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '40px' }}>მიმდინარე აქციები</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '40px', color: '#1F2937' }}>მიმდინარე აქციები</h1>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
           {deals.map(deal => {
             const progress = Math.min((deal.current_count / deal.target_count) * 100, 100);
             const isDone = submitted.has(deal.id);
+            const dealForm = formData[deal.id] || { name: '', phone: '', address: '' };
+
             return (
-              <div key={deal.id} style={{ backgroundColor: 'white', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                <img src={deal.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '15px' }} />
+              <div key={deal.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                <img src={deal.image_url} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '12px' }} />
+                <h2 style={{ fontSize: '20px', margin: '15px 0' }}>{deal.title}</h2>
+                <p style={{ fontSize: '14px', color: '#6B7280', minHeight: '40px' }}>{deal.description || "დეტალური ინფორმაცია მალე დაემატება."}</p>
                 
-                <h2 style={{ fontSize: '18px', margin: '15px 0 5px 0' }}>{deal.title}</h2>
-                
-                {deal.description ? (
-                  <p style={{ fontSize: '14px', color: '#555', margin: '10px 0' }}>{deal.description}</p>
-                ) : (
-                  <p style={{ fontSize: '14px', color: '#999', margin: '10px 0', fontStyle: 'italic' }}>დეტალური ინფორმაცია მალე დაემატება.</p>
-                )}
-                
-                <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10B981' }}>{deal.discounted_price} ₾</span>
+                <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#059669' }}>{deal.discounted_price} ₾</span>
                   <span style={{ fontSize: '14px', color: '#9CA3AF', textDecoration: 'line-through' }}>{deal.original_price} ₾</span>
                 </div>
 
-                <div style={{ marginBottom: '15px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold' }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold', marginBottom: '5px' }}>
                     <span>{deal.current_count} მონაწილე</span>
                     <span>მიზანი: {deal.target_count}</span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: '#eee', borderRadius: '4px', marginTop: '5px' }}>
-                    <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
+                  <div style={{ width: '100%', height: '10px', backgroundColor: '#E5E7EB', borderRadius: '5px' }}>
+                    <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#059669', borderRadius: '5px', transition: 'width 0.5s' }}></div>
                   </div>
                 </div>
                 
                 {!isDone ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input placeholder="სახელი" onChange={(e) => setFormData({...formData, [deal.id]: {...formData[deal.id], name: e.target.value}})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
-                    <input placeholder="ტელეფონი" onChange={(e) => setFormData({...formData, [deal.id]: {...formData[deal.id], phone: e.target.value}})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
-                    <input placeholder="მისამართი" onChange={(e) => setFormData({...formData, [deal.id]: {...formData[deal.id], address: e.target.value}})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
-                    <button onClick={() => handleSubmit(deal)} style={{ padding: '12px', backgroundColor: 'black', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input placeholder="სახელი" value={dealForm.name} onChange={(e) => handleInputChange(deal.id, 'name', e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB' }} />
+                    <input placeholder="ტელეფონი" value={dealForm.phone} onChange={(e) => handleInputChange(deal.id, 'phone', e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB' }} />
+                    <input placeholder="მისამართი" value={dealForm.address} onChange={(e) => handleInputChange(deal.id, 'address', e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB' }} />
+                    <button disabled={loading === deal.id} onClick={() => handleSubmit(deal)} style={{ padding: '14px', backgroundColor: '#111827', color: 'white', borderRadius: '8px', border: 'none', cursor: loading === deal.id ? 'not-allowed' : 'pointer' }}>
                       {loading === deal.id ? 'იტვირთება...' : 'მინდა მონაწილეობა'}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '15px', backgroundColor: '#f0fff4', borderRadius: '10px' }}>
-                    <p style={{ color: '#10B981', fontWeight: 'bold' }}>გილოცავთ, თქვენ უკვე ჩაერთეთ აქციაში!</p>
-                    <a href={deal.facebook_link || "#"} target="_blank" style={{ display: 'block', backgroundColor: '#0084FF', color: 'white', padding: '10px', borderRadius: '8px', textDecoration: 'none', marginTop: '10px' }}>
-                      აუცილებლად შემოგვიერთდით მესენჯერში
+                  <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#ECFDF5', borderRadius: '12px' }}>
+                    <p style={{ color: '#059669', fontWeight: 'bold', margin: '0 0 10px 0' }}>გილოცავთ, თქვენ უკვე ჩაერთეთ!</p>
+                    <a href={deal.facebook_link || "#"} target="_blank" style={{ display: 'block', backgroundColor: '#2563EB', color: 'white', padding: '12px', borderRadius: '8px', textDecoration: 'none' }}>
+                      შემოგვიერთდით მესენჯერში
                     </a>
                   </div>
                 )}
