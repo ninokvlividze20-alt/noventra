@@ -75,13 +75,13 @@ export default function LandingPage() {
                 
                 <h2 style={{ fontSize: '18px', margin: '15px 0 5px 0' }}>{deal.title}</h2>
                 
-                {/* ფასების ჩვენება */}
+                {/* ფასების ჩვენება შესწორებული სახელებით */}
                 <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10B981' }}>
-                    {deal.discount_price} ₾
+                    {deal.discounted_price} ₾
                   </span>
                   <span style={{ fontSize: '14px', color: '#9CA3AF', textDecoration: 'line-through' }}>
-                    {deal.price} ₾
+                    {deal.original_price} ₾
                   </span>
                 </div>
 
