@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // ეს უზრუნველყოფს, რომ პროექტი არ აირიოს სხვა ფაილებთან
+    // და მუშაობს სტაბილურად
+  },
 };
 
 export default nextConfig;

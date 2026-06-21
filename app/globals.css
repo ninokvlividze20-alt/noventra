@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #f4f7fe;
+  color: #1e293b;
+}
+
+h1, h2 { font-weight: 800; }
+
+button, a {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+button:hover, a:hover {
+  filter: brightness(0.9);
+}
