@@ -1,4 +1,3 @@
-cat << 'EOF' > app/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -60,7 +59,7 @@ export default function LandingPage() {
                     <span>მიზანი: {deal.target_count}</span>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: '#eee', borderRadius: '4px', marginTop: '5px' }}>
-                    <div style={{ width: \`\${progress}%\`, height: '100%', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
+                    <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
                   </div>
                 </div>
                 {!isDone ? (
@@ -88,4 +87,3 @@ export default function LandingPage() {
     </div>
   );
 }
-EOF
