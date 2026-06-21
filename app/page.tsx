@@ -13,13 +13,11 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<number | null>(null);
 
-  // მონაცემების წამოღება
   async function fetchDeals() {
     const { data } = await supabase.from('deals').select('*').eq('is_active', true);
     if (data) setDeals(data);
   }
 
-  // სტატუსის აღდგენა localStorage-დან
   useEffect(() => {
     const saved = localStorage.getItem('submitted_deals');
     if (saved) {
@@ -38,26 +36,19 @@ export default function LandingPage() {
     
     setLoading(deal.id);
     
-    // 1. ჩაწერა ბაზაში
     const { error: insertError } = await supabase.from('leads').insert([{ 
       name: data.name, phone: data.phone, address: data.address, deal_id: deal.id 
     }]);
 
     if (!insertError) {
-      // 2. ციფრის გაზრდა ბაზაში RPC-ით
       await supabase.rpc('increment_deal', { row_id: deal.id });
-      
-      // 3. სტატუსის განახლება
       const newSubmitted = new Set(submitted).add(deal.id);
       setSubmitted(newSubmitted);
       localStorage.setItem('submitted_deals', JSON.stringify(Array.from(newSubmitted)));
-      
-      // 4. დაუყოვნებლივ განახლება
       fetchDeals();
     } else {
       alert('შეცდომა: ' + insertError.message);
     }
-    
     setLoading(null);
   }
 
@@ -75,7 +66,14 @@ export default function LandingPage() {
                 
                 <h2 style={{ fontSize: '18px', margin: '15px 0 5px 0' }}>{deal.title}</h2>
                 
-                {/* ფასების ჩვენება შესწორებული სახელებით */}
+                {/* აღწერის ჩვენება (შემოწმება NULL-ზე) */}
+                {deal.description ? (
+                  <p style={{ fontSize: '14px', color: '#555', margin: '10px 0' }}>{deal.description}</p>
+                ) : (
+                  <p style={{ fontSize: '14px', color: '#999', margin: '10px 0', fontStyle: 'italic' }}>დეტალური ინფორმაცია მალე დაემატება.</p>
+                )}
+                
+                {/* ფასების ჩვენება */}
                 <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10B981' }}>
                     {deal.discounted_price} ₾
