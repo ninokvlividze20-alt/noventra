@@ -40,7 +40,7 @@ export default function LandingPage() {
       try { setSubmitted(new Set(JSON.parse(saved))); } catch (e) {}
     }
     fetchDeals();
-    const interval = setInterval(fetchDeals, 5000); // 5 წამი უფრო ოპტიმალურია
+    const interval = setInterval(fetchDeals, 5000);
     return () => clearInterval(interval);
   }, [fetchDeals]);
 
@@ -116,8 +116,8 @@ export default function LandingPage() {
                 ) : (
                   <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#ECFDF5', borderRadius: '12px' }}>
                     <p style={{ color: '#059669', fontWeight: 'bold', margin: '0 0 10px 0' }}>გილოცავთ, თქვენ უკვე ჩაერთეთ!</p>
-                    <a href={deal.facebook_link || "#"} target="_blank" style={{ display: 'block', backgroundColor: '#2563EB', color: 'white', padding: '12px', borderRadius: '8px', textDecoration: 'none' }}>
-                      შემოგვიერთდით მესენჯერში
+                    <a href={deal.whatsapp_link || "#"} target="_blank" style={{ display: 'block', backgroundColor: '#25D366', color: 'white', padding: '12px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                      შემოგვიერთდით ვოტსაპ ჯგუფში 📱
                     </a>
                   </div>
                 )}
