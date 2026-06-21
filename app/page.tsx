@@ -13,23 +13,20 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<number | null>(null);
 
-  // მონაცემების წამოღება და სტატუსის აღდგენა ერთდროულად
+  // მონაცემების წამოღება
   async function fetchDeals() {
     const { data } = await supabase.from('deals').select('*').eq('is_active', true);
-    if (data) {
-      setDeals(data);
-      // ავტომატურად ვამოწმებთ შენახულ მონაცემებს ყოველი განახლებისას
-      const saved = localStorage.getItem('submitted_deals');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setSubmitted(new Set(parsed));
-        } catch (e) {}
-      }
-    }
+    if (data) setDeals(data);
   }
 
+  // სტატუსის აღდგენა localStorage-დან
   useEffect(() => {
+    const saved = localStorage.getItem('submitted_deals');
+    if (saved) {
+      try {
+        setSubmitted(new Set(JSON.parse(saved)));
+      } catch (e) {}
+    }
     fetchDeals();
     const interval = setInterval(fetchDeals, 3000);
     return () => clearInterval(interval);
@@ -47,13 +44,16 @@ export default function LandingPage() {
     }]);
 
     if (!insertError) {
-      // 2. ციფრის გაზრდა
+      // 2. ციფრის გაზრდა ბაზაში RPC-ით
       await supabase.rpc('increment_deal', { row_id: deal.id });
       
-      // 3. სტატუსის მყისიერი განახლება
+      // 3. სტატუსის განახლება
       const newSubmitted = new Set(submitted).add(deal.id);
       setSubmitted(newSubmitted);
       localStorage.setItem('submitted_deals', JSON.stringify(Array.from(newSubmitted)));
+      
+      // 4. დაუყოვნებლივ განახლება
+      fetchDeals();
     } else {
       alert('შეცდომა: ' + insertError.message);
     }
