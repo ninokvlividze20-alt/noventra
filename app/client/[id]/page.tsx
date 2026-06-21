@@ -5,14 +5,18 @@ import Link from 'next/link';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
-export default function ClientDetails({ params }: { params: { id: string } }) {
+// აქ შევცვალეთ params ტიპი Promise-ით
+export default function ClientDetails({ params }: { params: Promise<{ id: string }> }) {
+  // use(params) იღებს Promise-ს და გვიბრუნებს ობიექტს
   const { id } = use(params);
+  
   const [tenant, setTenant] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [amountInput, setAmountInput] = useState('');
 
   useEffect(() => {
     async function fetchData() {
+      if (!id) return;
       const { data: t } = await supabase.from('tenants').select('*').eq('id', id).single();
       const { data: p } = await supabase.from('payments').select('*').eq('tenant_id', id).order('payment_date', { ascending: false });
       setTenant(t);
